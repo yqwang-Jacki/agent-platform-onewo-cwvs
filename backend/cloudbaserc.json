@@ -1,0 +1,8 @@
+{
+  "envId": "test-d9gd58qzc9e1242ac",
+  "$comments": [
+    "CloudBase 配置文件",
+    "envId: 环境 ID",
+    "region: 地域（可选，默认 ap-shanghai）"
+  ]
+}

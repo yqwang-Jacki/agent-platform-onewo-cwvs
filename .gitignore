@@ -1,0 +1,75 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*/.env
+*/.env.local
+
+# Build output
+out/
+.next/
+dist/
+build/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+*.egg
+*.whl
+build/
+develop-eggs/
+eggs/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# CloudBase
+.cloudbaserc.js
+.cloudbaserc.json
+
+# Next.js
+.next
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.pid
+*.seed
+*.tgz
