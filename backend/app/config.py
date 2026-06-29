@@ -7,7 +7,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
 
     # Database - 默认使用 SQLite（生产环境请改为 PostgreSQL）
-    DATABASE_URL: str = "sqlite:///data/agent_platform.db"
+    # 4 条斜杠是绝对路径，避免 CloudBase 容器内相对路径解析错误
+    DATABASE_URL: str = "sqlite:////app/data/agent_platform.db"
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
