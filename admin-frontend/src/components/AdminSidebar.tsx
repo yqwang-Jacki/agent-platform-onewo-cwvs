@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { logout, getUserRole } from "@/lib/api";
 
 type NavItem = {
   label: string;
   href: string;
-  icon: JSX.Element;
+  icon: React.ReactNode;
   minRole?: string;   // 需要的最小角色
 };
 
