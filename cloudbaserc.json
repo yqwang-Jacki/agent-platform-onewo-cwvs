@@ -3,6 +3,6 @@
   "envId": "test-d9gd58qzc9e1242ac",
   "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
   "cloudrun": {
-    "name": "agent-admin"
+    "name": "agent-frontend"
   }
 }

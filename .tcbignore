@@ -1,0 +1,19 @@
+# Build artifacts
+**/.next/
+**/out/
+**/node_modules/
+**/__pycache__/
+**/*.pyc
+**/venv/
+**/.venv/
+
+# Environment files
+**/.env
+**/.env.local
+
+# Git
+.git/
+
+# IDE
+.idea/
+.vscode/

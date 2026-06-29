@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { isLoggedIn, getProfile, type UserProfile } from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
 import ChatArea from "@/components/ChatArea";
 
 export default function MainPage() {
+  return (
+    <Suspense fallback={<div className="loading-screen">加载中...</div>}>
+      <MainPageInner />
+    </Suspense>
+  );
+}
+
+function MainPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -14,17 +22,23 @@ export default function MainPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
-  const [activeAgentId, setActiveAgentId] = useState<string | null>(
-    searchParams.get("agent") || null
-  );
-  const [activeConvId, setActiveConvId] = useState<string | null>(
-    searchParams.get("conv") || null
-  );
-  const [linkCode, setLinkCode] = useState<string | null>(
-    searchParams.get("link") || null
-  );
+  const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [linkCode, setLinkCode] = useState<string | null>(null);
   const [mode, setMode] = useState<"welcome" | "link" | "conv">("welcome");
 
+  // Read URL params on mount (after Suspense resolves)
+  useEffect(() => {
+    setActiveAgentId(searchParams.get("agent") || null);
+    setActiveConvId(searchParams.get("conv") || null);
+    const link = searchParams.get("link");
+    if (link) {
+      setLinkCode(link);
+      setMode("link");
+    }
+  }, []);
+
+  // Skip pre-render issues - only init searchParams after mount
   useEffect(() => {
     setMounted(true);
     if (!isLoggedIn()) {
@@ -66,13 +80,7 @@ export default function MainPage() {
   }, [router]);
 
   // Handle share link flow (loaded via link param or separate page redirect)
-  useEffect(() => {
-    const link = searchParams.get("link");
-    if (link) {
-      setLinkCode(link);
-      setMode("link");
-    }
-  }, [searchParams]);
+  // Already handled in the mount useEffect above
 
   if (!mounted || !authChecked) {
     return <div className="loading-screen">加载中...</div>;
