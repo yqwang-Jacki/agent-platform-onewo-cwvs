@@ -6,8 +6,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Agent发布平台"
     API_V1_STR: str = "/api/v1"
 
-    # Database - 支持 SQLite 和 PostgreSQL
-    DATABASE_URL: Optional[str] = None  # SQLite: sqlite:///./agent_platform.db
+    # Database - 默认使用 SQLite（生产环境请改为 PostgreSQL）
+    DATABASE_URL: str = "sqlite:///data/agent_platform.db"
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
