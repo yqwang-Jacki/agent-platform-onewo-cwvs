@@ -5,10 +5,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { isLoggedIn, getAgentByLink, createConversation, sendMessage as sendMsgViaLink } from "@/lib/api";
 import ChatArea from "@/components/ChatArea";
 
-export function generateStaticParams() {
-  return [];
-}
-
 export default function ShareLinkChatPage() {
   const pathname = usePathname();
   const linkCode = pathname?.split("/c/")[1] || "";
