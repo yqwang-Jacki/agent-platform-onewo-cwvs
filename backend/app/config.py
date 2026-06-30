@@ -1,33 +1,26 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+
+# CloudBase PostgreSQL 生产数据库 - 硬编码，不受环境变量覆盖
+_PG_DATABASE_URL = "postgresql://agent_platform:Workbuddy-test-key1@172.17.0.11:5432/postgres"
 
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Agent发布平台"
     API_V1_STR: str = "/api/v1"
 
-    # Database - CloudBase PostgreSQL（生产环境）
-    # 格式: postgresql://{user}:{password}@{host}:5432/{dbname}
-    DATABASE_URL: str = "postgresql://agent_platform:Workbuddy-test-key1@172.17.0.11:5432/postgres"
-    POSTGRES_SERVER: str = "172.17.0.11"
-    POSTGRES_USER: str = "agent_platform"
-    POSTGRES_PASSWORD: str = "Workbuddy-test-key1"
-    POSTGRES_DB: str = "postgres"
+    @property
+    def DATABASE_URL(self) -> str:
+        """Always use PostgreSQL. Ignore any SQLite env var injected by CloudBase."""
+        return _PG_DATABASE_URL
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
-        if self.DATABASE_URL:
-            return self.DATABASE_URL
-        return (
-            f"postgresql://"
-            f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.POSTGRES_SERVER}:5432/{self.POSTGRES_DB}"
-        )
+        return self.DATABASE_URL
 
     # JWT
     SECRET_KEY: str = "change-me-in-production-use-openssl-rand-hex-32"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120   # 2h
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # CORS
@@ -39,7 +32,7 @@ class Settings(BaseSettings):
     # Agent API proxy timeout (seconds)
     AGENT_PROXY_TIMEOUT: int = 60
 
-    model_config = {"env_file": ".env", "case_sensitive": True, "extra": "ignore"}
+    model_config = {"case_sensitive": True, "extra": "ignore"}
 
 
 settings = Settings()

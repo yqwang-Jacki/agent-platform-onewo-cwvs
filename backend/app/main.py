@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import logging
+
 from app.config import settings
 from app.database import engine, Base, SessionLocal
 from app.api.v1 import auth, agents, chat, publisher, admin, platforms
@@ -9,15 +11,22 @@ from app.api.v1 import auth, agents, chat, publisher, admin, platforms
 import app.connectors.gc_connector   # noqa: F401
 import app.connectors.coze_connector  # noqa: F401
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 启动时自动建表（MVP 用，生产环境用 Alembic 迁移）
-    Base.metadata.create_all(bind=engine)
+    # 启动时尝试建表和初始化数据，失败不崩溃（兼容无 VPC / 网络延迟等场景）
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("[OK] Database tables created/verified")
+    except Exception as e:
+        logger.warning(f"[WARN] Database create_all failed (app will still start): {e}")
 
     # 初始化测试账号（仅开发环境，MVP 用）
-    db = SessionLocal()
+    db = None
     try:
+        db = SessionLocal()
         from app.models import User, Publisher, Role
         from app.core.security import get_password_hash, _load_roles_from_db
 
@@ -59,7 +68,7 @@ async def lifespan(app: FastAPI):
                     role=u["role"], status="active",
                 ))
             db.commit()
-            print("[OK] Created 3 test users: admin(13800000000) / developer(13800000001) / user(13800000002), password Test123456")
+            print("[OK] Created 3 test users: admin(13800000000) / developer(13800000001) / user(138000002), password Test123456")
 
         if not db.query(Publisher).first():
             test_publisher = Publisher(
@@ -74,8 +83,11 @@ async def lifespan(app: FastAPI):
             db.add(test_publisher)
             db.commit()
             print("[OK] Created test publisher: appid=test_app, secretkey=test_secret_key_123, phone=13800000001")
+    except Exception as e:
+        logger.warning(f"[WARN] Database seed/init failed (app will still start): {e}")
     finally:
-        db.close()
+        if db:
+            db.close()
 
     yield
 
