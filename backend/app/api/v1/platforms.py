@@ -50,8 +50,20 @@ async def validate_credentials(body: PlatformCredentialCheck):
         project_id=body.project_id,
     )
 
-    valid = await connector.validate_credentials(cred)
-    return {"valid": valid, "platform_type": body.platform_type}
+    try:
+        valid = await connector.validate_credentials(cred)
+    except Exception as e:
+        # 透传底层错误（如 401/403/连接超时等）
+        return {"valid": False, "detail": str(e), "platform_type": body.platform_type}
+
+    if not valid:
+        return {
+            "valid": False,
+            "detail": "凭据无效：请检查 API Token 是否正确、域名是否可访问",
+            "platform_type": body.platform_type,
+        }
+
+    return {"valid": True, "detail": "", "platform_type": body.platform_type}
 
 
 @router.post("/bots", response_model=list[PlatformBotItem])

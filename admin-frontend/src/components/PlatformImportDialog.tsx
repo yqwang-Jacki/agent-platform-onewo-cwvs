@@ -108,11 +108,8 @@ export default function PlatformImportDialog({
   const [appid, setAppid] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [apiToken, setApiToken] = useState("");
-  const [clientId, setClientId] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
   const [domain, setDomain] = useState("");
   const [projectId, setProjectId] = useState("");
-  const [authMode, setAuthMode] = useState<"pat" | "oauth">("pat");
 
   // Bot list
   const [bots, setBots] = useState<PlatformBotItem[]>([]);
@@ -139,8 +136,7 @@ export default function PlatformImportDialog({
     setSelectedPlatform(p);
     setStep("credentials");
     setErr("");
-    setAppid(""); setSecretKey(""); setApiToken(""); setClientId(""); setClientSecret("");
-    setDomain(""); setProjectId(""); setAuthMode("pat");
+    setAppid(""); setSecretKey(""); setApiToken(""); setDomain(""); setProjectId("");
   }
 
   async function validateAndFetch() {
@@ -151,21 +147,28 @@ export default function PlatformImportDialog({
       if (selectedPlatform!.platform_type === "gc") {
         data.appid = appid; data.secret_key = secretKey;
       } else if (selectedPlatform!.platform_type === "coze") {
-        if (authMode === "oauth") {
-          data.client_id = clientId; data.client_secret = clientSecret;
-        } else {
-          data.api_token = apiToken;
-        }
+        data.api_token = apiToken;
         data.domain = domain;
         data.project_id = parseInt(projectId) || 0;
       }
+
       const result = await validatePlatformCredentials(data as any);
-      if (!result.valid) { setErr("凭据验证失败，请检查后重试"); setLoading(false); return; }
+      if (!result.valid) {
+        // 后端返回的 detail 字段包含具体错误码/消息
+        const detail = (result as any).detail || "";
+        setErr(detail || "凭据验证失败，请检查 API Token 和域名后重试");
+        setLoading(false);
+        return;
+      }
       const botList = await listPlatformBots(data as any);
       setBots(botList);
       setStep("select-bot");
     } catch (e: unknown) {
-      setErr((e as Error).message);
+      const msg = (e as Error).message || String(e);
+      // 尝试提取 HTTP 状态码
+      const codeMatch = msg.match(/\b(40[0-9]|4\d{2}|5\d{2})\b/);
+      const code = codeMatch ? ` (${codeMatch[1]})` : "";
+      setErr(`验证请求失败${code}: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -188,7 +191,6 @@ export default function PlatformImportDialog({
       await importAgent({
         platform_type: selectedPlatform!.platform_type,
         appid, secret_key: secretKey, api_token: apiToken,
-        client_id: clientId, client_secret: clientSecret,
         domain, project_id: parseInt(projectId) || 0,
         bot_id: selectedBot?.bot_id || customBotId,
         bot_name: selectedBot?.name || customBotName,
@@ -293,44 +295,12 @@ export default function PlatformImportDialog({
                 {selectedPlatform.platform_type === "coze" && (
                   <>
                     <div className="admin-form-group">
-                      <label>认证方式</label>
-                      <div className="pi-auth-tabs">
-                        <button
-                          type="button"
-                          className={`pi-auth-tab ${authMode === "pat" ? "active" : ""}`}
-                          onClick={() => setAuthMode("pat")}
-                        >
-                          API Token (PAT)
-                        </button>
-                        <button
-                          type="button"
-                          className={`pi-auth-tab ${authMode === "oauth" ? "active" : ""}`}
-                          onClick={() => setAuthMode("oauth")}
-                        >
-                          OAuth 客户端凭证
-                        </button>
-                      </div>
+                      <label>API Token</label>
+                      <textarea className="admin-textarea" value={apiToken} onChange={(e) => setApiToken(e.target.value)} placeholder="Coze 平台创建的 API Token (cztei_xxx 格式)" rows={3} />
                     </div>
-                    {authMode === "pat" ? (
-                      <div className="admin-form-group">
-                        <label>API Token</label>
-                        <textarea className="admin-textarea" value={apiToken} onChange={(e) => setApiToken(e.target.value)} placeholder="Coze 个人访问令牌 (cztei_xxx 或 pat_xxx 格式)" rows={3} />
-                      </div>
-                    ) : (
-                      <>
-                        <div className="admin-form-group">
-                          <label>客户端 ID</label>
-                          <input className="admin-input" value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="Coze OAuth 应用 Client ID" />
-                        </div>
-                        <div className="admin-form-group">
-                          <label>客户端密钥</label>
-                          <input className="admin-input" type="password" value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} placeholder="Coze OAuth 应用 Client Secret" />
-                        </div>
-                      </>
-                    )}
                     <div className="admin-form-group">
                       <label>部署域名</label>
-                      <input className="admin-input" value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="例如: api.coze.cn 或 6dzhzw2vvm.coze.site" />
+                      <input className="admin-input" value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="例如: api.coze.cn 或 xxx.coze.site" />
                     </div>
                     <div className="admin-form-group">
                       <label>Project ID</label>

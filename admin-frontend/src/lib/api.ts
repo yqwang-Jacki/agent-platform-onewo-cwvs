@@ -342,7 +342,7 @@ export async function validatePlatformCredentials(data: {
   client_secret?: string;
   domain?: string;
   project_id?: number;
-}): Promise<{ valid: boolean }> {
+}): Promise<{ valid: boolean; detail: string }> {
   const res = await apiFetch("/platforms/validate", {
     method: "POST",
     body: JSON.stringify(data),
