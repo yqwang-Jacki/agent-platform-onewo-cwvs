@@ -129,7 +129,12 @@ async def import_agent(
         domain = body.domain.rstrip("/") if body.domain else "https://api.coze.cn"
         if not domain.startswith("http"):
             domain = f"https://{domain}"
-        api_endpoint = f"{domain}/stream_run"
+        # 新版 v3 API: api.coze.cn → /v3/chat
+        # 旧版 stream_run: coze.site → /stream_run (由连接器运行时处理)
+        if "api.coze" in domain:
+            api_endpoint = f"{domain}/v3/chat"
+        else:
+            api_endpoint = f"{domain}/stream_run"
         platform_config["api_token"] = body.api_token  # TODO: 生产环境应加密存储
         api_headers = {
             "Authorization": f"Bearer {body.api_token}",
