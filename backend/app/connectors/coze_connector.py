@@ -33,11 +33,48 @@ class CozeConnector(BaseConnector):
     platform_type = "coze"
     platform_label = "扣子（Coze）"
     platform_icon = "coze"
-    help_text = "输入 API Token 和部署域名，自动导入 Bot"
+    help_text = "支持 PAT 或 OAuth 2.0：填入 API Token，或客户端 ID + 客户端密钥"
 
-    def _build_headers(self, cred: PlatformCredential) -> dict:
+    def _use_oauth(self, cred: PlatformCredential) -> bool:
+        """当同时提供 client_id 和 client_secret 时使用 OAuth 2.0"""
+        return bool(cred.client_id and cred.client_secret)
+
+    def _oauth_token_url(self, cred: PlatformCredential) -> str:
+        """根据域名判断 OAuth token endpoint"""
+        domain = (cred.domain or "").lower()
+        if "api.coze.com" in domain:
+            return "https://api.coze.com/api/permission/oauth2/token"
+        return "https://api.coze.cn/api/permission/oauth2/token"
+
+    async def _get_oauth_token(self, cred: PlatformCredential) -> str:
+        """用 client_credentials 换取 access_token"""
+        url = self._oauth_token_url(cred)
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                url,
+                json={
+                    "grant_type": "client_credentials",
+                    "client_id": cred.client_id,
+                    "client_secret": cred.client_secret,
+                },
+                headers={"Content-Type": "application/json"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            token = data.get("access_token", "")
+            if not token:
+                raise ValueError("Coze OAuth 响应中未包含 access_token")
+            return token
+
+    async def _build_headers(self, cred: PlatformCredential) -> dict:
+        if self._use_oauth(cred):
+            token = await self._get_oauth_token(cred)
+        else:
+            token = cred.api_token
+            if not token:
+                raise ValueError("缺少 Coze 凭据：请提供 API Token 或 Client ID + Client Secret")
         return {
-            "Authorization": f"Bearer {cred.api_token}",
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
 
@@ -122,8 +159,10 @@ class CozeConnector(BaseConnector):
                         "role": "user",
                         "content": last_user_msg,
                         "content_type": "text",
+                        "type": "question",
                     }
                 ],
+                "parameters": {},
             }
 
         # ── 旧版 stream_run 格式 ──
@@ -146,9 +185,10 @@ class CozeConnector(BaseConnector):
         return payload
 
     async def validate_credentials(self, cred: PlatformCredential) -> bool:
-        """验证凭据 — 旧版调 stream_run, 新版调 v3/chat"""
+        """验证凭据 — 旧版调 stream_run, 新版调 v3/chat, OAuth 仅换 token"""
         try:
             url, mode = self._build_url(cred)
+            headers = await self._build_headers(cred)
             async with httpx.AsyncClient(timeout=15) as client:
                 if mode == "v3":
                     # 新版 v3: 需要 bot_id
@@ -159,10 +199,10 @@ class CozeConnector(BaseConnector):
                             "user_id": "validation",
                             "stream": False,
                             "additional_messages": [
-                                {"role": "user", "content": "ping", "content_type": "text"}
+                                {"role": "user", "content": "ping", "content_type": "text", "type": "question"}
                             ],
                         },
-                        headers=self._build_headers(cred),
+                        headers=headers,
                     )
                 else:
                     # 旧版 stream_run
@@ -177,7 +217,7 @@ class CozeConnector(BaseConnector):
                             "type": "query",
                             "session_id": "cred_validation",
                         },
-                        headers=self._build_headers(cred),
+                        headers=headers,
                     )
                 if resp.status_code in (401, 403):
                     return False
@@ -212,36 +252,43 @@ class CozeConnector(BaseConnector):
         url, mode = self._build_url(cred, bot_config)
         payload = self._build_payload(cred, bot_config, messages, mode=mode)
 
-        # v3 非流式: 设置 stream=False
+        # v3 始终走流式模式收集结果（非流式需要轮询 chat 状态，更复杂）
         if mode == "v3":
-            payload["stream"] = False
+            payload["stream"] = True
 
         full_answer = ""
         tokens_used = 0
         error_msg = ""
 
+        current_event = ""
+        headers = await self._build_headers(cred)
         async with httpx.AsyncClient(timeout=settings.AGENT_PROXY_TIMEOUT) as client:
             async with client.stream(
-                "POST", url, json=payload, headers=self._build_headers(cred)
+                "POST", url, json=payload, headers=headers
             ) as resp:
                 resp.raise_for_status()
                 async for line in resp.aiter_lines():
-                    parsed = self._parse_sse_line(line, mode)
+                    # v3: 先捕获 event: 行
+                    if mode == "v3" and line.startswith("event:"):
+                        current_event = line[6:].strip()
+                        continue
+
+                    parsed = self._parse_sse_line(line, mode, current_event)
                     if not parsed:
                         continue
 
                     event_type, data = parsed
 
                     if mode == "v3":
-                        # v3 SSE 格式: {"event":"conversation.message.delta","data":{"content":"..."}}
-                        if event_type == "message.delta" or event_type == "conversation.message.delta":
-                            content = (data.get("data") or data).get("content", "")
+                        # 只有 conversation.message.delta 且 type=answer 才收集内容
+                        if event_type == "conversation.message.delta" and data.get("type") == "answer":
+                            content = data.get("content", "")
                             if content:
                                 full_answer += content
-                        elif event_type == "message.end" or event_type == "conversation.message.complete":
-                            token_info = data.get("data", data) or {}
-                            tokens_used = token_info.get("token_count", 0) or token_info.get("usage", {}).get("total_tokens", 0)
-                        elif event_type in ("error", "conversation.message.error"):
+                        elif event_type == "conversation.chat.completed":
+                            usage = data.get("usage", {}) or {}
+                            tokens_used = usage.get("token_count", 0) or usage.get("total_tokens", 0)
+                        elif event_type in ("conversation.message.error", "error"):
                             error_msg = str(data.get("message", data.get("msg", "Coze v3 错误")))
                     else:
                         # 旧版 stream_run 格式
@@ -259,8 +306,11 @@ class CozeConnector(BaseConnector):
 
         return ConnectorChatResult(content=full_answer, tokens_used=tokens_used)
 
-    def _parse_sse_line(self, line: str, mode: str) -> tuple[str, dict] | None:
-        """解析一行 SSE 数据
+    def _parse_sse_line(self, line: str, mode: str, sse_event: str = "") -> tuple[str, dict] | None:
+        """解析一行 SSE data
+
+        v3 模式：event 名来自 sse_event 参数（从 event: 行读取），
+                 数据 JSON 中的 type 字段表示消息类型（answer/function_call/tool_response）
 
         Returns:
             (event_type, data_dict) 或 None
@@ -275,12 +325,13 @@ class CozeConnector(BaseConnector):
         except json.JSONDecodeError:
             return None
 
+        if mode == "v3":
+            # event 名来自 SSE event: 行，数据中的 type 是消息类型
+            event_type = sse_event or event.get("event", "")
+            return event_type, event
+
+        # 旧版: 从 JSON 中取 type 或 event 字段
         event_type = event.get("type", "") or event.get("event", "")
-
-        # v3 的事件名在 .event 字段
-        if mode == "v3" and not event_type:
-            event_type = event.get("event", "")
-
         return event_type, event
 
     async def chat_stream(
@@ -297,22 +348,29 @@ class CozeConnector(BaseConnector):
         if mode == "v3":
             payload["stream"] = True
 
+        current_event = ""
+        headers = await self._build_headers(cred)
         async with httpx.AsyncClient(timeout=settings.AGENT_PROXY_TIMEOUT) as client:
             async with client.stream(
-                "POST", url, json=payload, headers=self._build_headers(cred)
+                "POST", url, json=payload, headers=headers
             ) as resp:
                 resp.raise_for_status()
                 async for line in resp.aiter_lines():
-                    parsed = self._parse_sse_line(line, mode)
+                    # v3: 先捕获 event: 行
+                    if mode == "v3" and line.startswith("event:"):
+                        current_event = line[6:].strip()
+                        continue
+
+                    parsed = self._parse_sse_line(line, mode, current_event)
                     if not parsed:
                         continue
 
                     event_type, data = parsed
 
                     if mode == "v3":
-                        if event_type in ("message.delta", "conversation.message.delta"):
-                            delta_data = data.get("data", data)
-                            content = delta_data.get("content", "")
+                        # 只输出 type=answer 的 delta 增量
+                        if event_type == "conversation.message.delta" and data.get("type") == "answer":
+                            content = data.get("content", "")
                             if content:
                                 yield content
                         elif event_type in ("error", "conversation.message.error"):

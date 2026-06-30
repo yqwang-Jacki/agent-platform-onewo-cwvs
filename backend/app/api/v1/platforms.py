@@ -44,6 +44,8 @@ async def validate_credentials(body: PlatformCredentialCheck):
         appid=body.appid,
         secret_key=body.secret_key,
         api_token=body.api_token,
+        client_id=body.client_id,
+        client_secret=body.client_secret,
         domain=body.domain,
         project_id=body.project_id,
     )
@@ -64,6 +66,8 @@ async def list_bots(body: PlatformCredentialCheck):
         appid=body.appid,
         secret_key=body.secret_key,
         api_token=body.api_token,
+        client_id=body.client_id,
+        client_secret=body.client_secret,
         domain=body.domain,
         project_id=body.project_id,
     )
@@ -101,6 +105,8 @@ async def import_agent(
         appid=body.appid,
         secret_key=body.secret_key,
         api_token=body.api_token,
+        client_id=body.client_id,
+        client_secret=body.client_secret,
         domain=body.domain,
         project_id=body.project_id,
     )
@@ -137,8 +143,11 @@ async def import_agent(
         # api_endpoint 由连接器运行时动态构建，此处只存基础信息
         platform_config["domain"] = domain
         platform_config["api_token"] = body.api_token  # TODO: 生产环境应加密存储
+        if body.client_id:
+            platform_config["client_id"] = body.client_id
+        if body.client_secret:
+            platform_config["client_secret"] = body.client_secret
         api_headers = {
-            "Authorization": f"Bearer {body.api_token}",
             "Content-Type": "application/json",
         }
 

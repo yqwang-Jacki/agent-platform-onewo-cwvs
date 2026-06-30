@@ -345,6 +345,8 @@ class PlatformCredentialCheck(BaseModel):
     appid: str = ""
     secret_key: str = ""
     api_token: str = ""
+    client_id: str = ""
+    client_secret: str = ""
     domain: str = ""
     project_id: int = 0
 
@@ -364,6 +366,8 @@ class PlatformImportRequest(BaseModel):
     appid: str = ""
     secret_key: str = ""
     api_token: str = ""
+    client_id: str = ""
+    client_secret: str = ""
     domain: str = ""
     project_id: int = 0
     # Bot 信息

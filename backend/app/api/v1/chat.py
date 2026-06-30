@@ -60,6 +60,8 @@ async def _call_agent_api(agent: Agent, history: list[dict], stream: bool, conv_
         appid=pc.get("appid", ""),
         secret_key=pc.get("secret_key", ""),
         api_token=pc.get("api_token", ""),
+        client_id=pc.get("client_id", ""),
+        client_secret=pc.get("client_secret", ""),
         domain=pc.get("domain", ""),
         project_id=pc.get("project_id", 0),
     )
@@ -96,6 +98,8 @@ async def _call_agent_api_stream(agent: Agent, history: list[dict], conv_id: str
         appid=pc.get("appid", ""),
         secret_key=pc.get("secret_key", ""),
         api_token=pc.get("api_token", ""),
+        client_id=pc.get("client_id", ""),
+        client_secret=pc.get("client_secret", ""),
         domain=pc.get("domain", ""),
         project_id=pc.get("project_id", 0),
     )

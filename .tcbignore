@@ -13,7 +13,14 @@
 
 # Git
 .git/
+.gitignore
 
 # IDE
 .idea/
 .vscode/
+
+# Database files
+**/*.db
+
+# Test files
+**/test_*.py

@@ -315,6 +315,8 @@ export type PlatformImportRequest = {
   appid?: string;
   secret_key?: string;
   api_token?: string;
+  client_id?: string;
+  client_secret?: string;
   domain?: string;
   project_id?: number;
   bot_id?: string;
@@ -336,6 +338,8 @@ export async function validatePlatformCredentials(data: {
   appid?: string;
   secret_key?: string;
   api_token?: string;
+  client_id?: string;
+  client_secret?: string;
   domain?: string;
   project_id?: number;
 }): Promise<{ valid: boolean }> {
@@ -352,6 +356,8 @@ export async function listPlatformBots(data: {
   appid?: string;
   secret_key?: string;
   api_token?: string;
+  client_id?: string;
+  client_secret?: string;
   domain?: string;
   project_id?: number;
 }): Promise<PlatformBotItem[]> {

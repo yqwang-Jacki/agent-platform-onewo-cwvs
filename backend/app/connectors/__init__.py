@@ -23,6 +23,8 @@ class PlatformCredential:
     appid: str = ""
     secret_key: str = ""
     api_token: str = ""
+    client_id: str = ""      # OAuth 2.0 client_id
+    client_secret: str = ""  # OAuth 2.0 client_secret
     domain: str = ""         # COZE domain
     project_id: int = 0      # COZE project_id
     extra: dict = field(default_factory=dict)
