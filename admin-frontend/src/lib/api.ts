@@ -51,11 +51,18 @@ export function logout() {
   }
 }
 
-export async function apiFetch(path: string, init?: RequestInit) {
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...authHeaders(), ...(init?.headers || {}) },
-  });
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      ...init,
+      headers: { "Content-Type": "application/json", ...authHeaders(), ...(init?.headers || {}) },
+    });
+  } catch (networkErr) {
+    // 网络层失败（DNS、连接拒绝、CORS、超时等）
+    console.error(`[apiFetch] 网络错误: ${BASE}${path}`, networkErr);
+    throw new Error(`网络请求失败 (${BASE})，请检查后端服务是否正常运行`);
+  }
   if (res.status === 401) {
     logout();
     throw new Error("认证失效，请重新登录");
