@@ -8,11 +8,11 @@ class Settings(BaseSettings):
 
     # Database - CloudBase PostgreSQL（生产环境）
     # 格式: postgresql://{user}:{password}@{host}:5432/{dbname}
-    DATABASE_URL: str = "postgresql://postgres:CHANGE_ME@postgres-8ymmqqw6.postgres.ap-shanghai.tencentcdb.com:5432/postgres"
-    POSTGRES_SERVER: str = "localhost"
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_DB: str = "agent_platform"
+    DATABASE_URL: str = "postgresql://agent_platform:Workbuddy-test-key1@172.17.0.11:5432/postgres"
+    POSTGRES_SERVER: str = "172.17.0.11"
+    POSTGRES_USER: str = "agent_platform"
+    POSTGRES_PASSWORD: str = "Workbuddy-test-key1"
+    POSTGRES_DB: str = "postgres"
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
