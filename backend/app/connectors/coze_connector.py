@@ -80,9 +80,10 @@ class CozeConnector(BaseConnector):
         if self._is_v3_api(domain):
             # 新版: POST https://api.coze.cn/v3/chat
             base = domain.rstrip("/")
-            # 如果用户误填了 /stream_run 后缀，去掉它
-            if base.endswith("/stream_run"):
-                base = base[: -len("/stream_run")]
+            # 如果用户误填了 /v3/chat 或 /stream_run 后缀，去掉
+            for suffix in ("/v3/chat", "/chat", "/stream_run"):
+                if base.endswith(suffix):
+                    base = base[: -len(suffix)]
             return f"{base}/v3/chat", "v3"
 
         # 旧版 coze.site stream_run

@@ -126,15 +126,16 @@ async def import_agent(
         api_headers = {"Content-Type": "application/json"}
 
     elif body.platform_type == "coze":
-        domain = body.domain.rstrip("/") if body.domain else "https://api.coze.cn"
+        raw_domain = body.domain.strip() if body.domain else ""
+        # 清理域名：只保留基础部分，去除 /v3/chat、/chat、/stream_run 等路径后缀
+        for suffix in ("/v3/chat", "/chat", "/stream_run"):
+            if raw_domain.endswith(suffix):
+                raw_domain = raw_domain[: -len(suffix)]
+        domain = raw_domain or "https://api.coze.cn"
         if not domain.startswith("http"):
             domain = f"https://{domain}"
-        # 新版 v3 API: api.coze.cn → /v3/chat
-        # 旧版 stream_run: coze.site → /stream_run (由连接器运行时处理)
-        if "api.coze" in domain:
-            api_endpoint = f"{domain}/v3/chat"
-        else:
-            api_endpoint = f"{domain}/stream_run"
+        # api_endpoint 由连接器运行时动态构建，此处只存基础信息
+        platform_config["domain"] = domain
         platform_config["api_token"] = body.api_token  # TODO: 生产环境应加密存储
         api_headers = {
             "Authorization": f"Bearer {body.api_token}",
