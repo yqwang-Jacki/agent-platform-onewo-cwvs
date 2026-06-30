@@ -4,8 +4,8 @@ gunicorn==23.0.0
 pydantic==2.10.5
 pydantic-settings==2.3.3
 sqlalchemy==2.0.41
-# Database drivers - Comment out psycopg2-binary if using SQLite
-# psycopg2-binary==2.9.10
+# Database drivers - PostgreSQL (CloudBase PG)
+psycopg2-binary==2.9.10
 python-jose[cryptography]==3.3.0
 bcrypt==4.2.1
 python-multipart==0.0.20

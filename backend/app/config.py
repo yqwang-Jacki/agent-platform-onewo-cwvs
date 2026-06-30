@@ -6,9 +6,9 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Agent发布平台"
     API_V1_STR: str = "/api/v1"
 
-    # Database - 默认使用 SQLite（生产环境请改为 PostgreSQL）
-    # 4 条斜杠是绝对路径，避免 CloudBase 容器内相对路径解析错误
-    DATABASE_URL: str = "sqlite:////app/data/agent_platform.db"
+    # Database - CloudBase PostgreSQL（生产环境）
+    # 格式: postgresql://{user}:{password}@{host}:5432/{dbname}
+    DATABASE_URL: str = "postgresql://postgres:CHANGE_ME@postgres-8ymmqqw6.postgres.ap-shanghai.tencentcdb.com:5432/postgres"
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
