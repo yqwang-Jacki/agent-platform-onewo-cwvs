@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -14,16 +15,16 @@ import app.connectors.coze_connector  # noqa: F401
 logger = logging.getLogger(__name__)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # 启动时尝试建表和初始化数据，失败不崩溃（兼容无 VPC / 网络延迟等场景）
+def _init_database():
+    """同步 DB 初始化（在 thread pool 中运行，不影响事件循环）"""
+    # 1. 建表
     try:
         Base.metadata.create_all(bind=engine)
         logger.info("[OK] Database tables created/verified")
     except Exception as e:
-        logger.warning(f"[WARN] Database create_all failed (app will still start): {e}")
+        logger.warning(f"[WARN] Database create_all failed: {e}")
 
-    # 初始化测试账号（仅开发环境，MVP 用）
+    # 2. 初始化测试数据
     db = None
     try:
         db = SessionLocal()
@@ -68,27 +69,41 @@ async def lifespan(app: FastAPI):
                     role=u["role"], status="active",
                 ))
             db.commit()
-            print("[OK] Created 3 test users: admin(13800000000) / developer(13800000001) / user(138000002), password Test123456")
+            logger.info("[OK] Created 3 test users (admin/dev/user), password Test123456")
 
         if not db.query(Publisher).first():
             test_publisher = Publisher(
                 appid="test_app",
                 secretkey_hash=get_password_hash("test_secret_key_123"),
                 name="开发者张三",
-                phone="13800000001",   # 关联 developer 用户
+                phone="13800000001",
                 password_hash=get_password_hash("Test123456"),
                 quota_config={},
                 status="active",
             )
             db.add(test_publisher)
             db.commit()
-            print("[OK] Created test publisher: appid=test_app, secretkey=test_secret_key_123, phone=13800000001")
+            logger.info("[OK] Created test publisher: appid=test_app")
     except Exception as e:
-        logger.warning(f"[WARN] Database seed/init failed (app will still start): {e}")
+        logger.warning(f"[WARN] Database seed failed: {e}")
     finally:
         if db:
             db.close()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 在 thread pool 中执行 DB 初始化，5 秒超时
+    # DB 不可用时不会阻塞应用启动，健康检查正常通过
+    try:
+        await asyncio.wait_for(
+            asyncio.to_thread(_init_database),
+            timeout=5.0,
+        )
+    except asyncio.TimeoutError:
+        logger.warning("[WARN] Database init timed out (>5s) — DB may be unreachable; app starting anyway")
+    except Exception as e:
+        logger.warning(f"[WARN] Database init error: {e} — app starting anyway")
     yield
 
 
