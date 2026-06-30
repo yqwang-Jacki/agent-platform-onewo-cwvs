@@ -185,27 +185,44 @@ class CozeConnector(BaseConnector):
         return payload
 
     async def validate_credentials(self, cred: PlatformCredential) -> bool:
-        """验证凭据 — 旧版调 stream_run, 新版调 v3/chat, OAuth 仅换 token"""
+        """验证凭据 — 通过调用 Coze 用户信息接口验证 Token 有效性
+
+        新版 v3: 调 GET /v1/users/me (只需要 token, 不需要 bot_id)
+        旧版 coze.site: 调 stream_run 接口测试 (bot_id 填空)
+        """
         try:
-            url, mode = self._build_url(cred)
+            domain = (cred.domain or "").strip()
+            if not domain.startswith("http"):
+                domain = f"https://{domain}"
             headers = await self._build_headers(cred)
-            async with httpx.AsyncClient(timeout=15) as client:
-                if mode == "v3":
-                    # 新版 v3: 需要 bot_id
-                    resp = await client.post(
-                        url,
-                        json={
-                            "bot_id": "",
-                            "user_id": "validation",
-                            "stream": False,
-                            "additional_messages": [
-                                {"role": "user", "content": "ping", "content_type": "text", "type": "question"}
-                            ],
-                        },
-                        headers=headers,
-                    )
-                else:
-                    # 旧版 stream_run
+
+            if self._is_v3_api(domain):
+                # 新版 v3: 调用 /v1/users/me 验证 Token，无需 bot_id
+                base = domain.rstrip("/")
+                for suffix in ("/v3/chat", "/chat"):
+                    if base.endswith(suffix):
+                        base = base[: -len(suffix)]
+                verify_url = f"{base}/v1/users/me"
+                async with httpx.AsyncClient(timeout=15) as client:
+                    resp = await client.get(verify_url, headers=headers)
+                    if resp.status_code in (401, 403):
+                        return False
+                    try:
+                        body = resp.json()
+                        code = body.get("code", 0)
+                        # Coze 认证错误码: 4100=token无效, 4101=token过期, 4102=权限不足
+                        if code in (4100, 4101, 4102):
+                            msg = body.get("msg", "Token 无效")
+                            raise ValueError(f"Coze 认证失败 (code={code}): {msg}")
+                    except ValueError:
+                        raise
+                    except Exception:
+                        pass
+                    return resp.status_code < 500
+            else:
+                # 旧版 coze.site: stream_run 接口
+                url, _ = self._build_url(cred)
+                async with httpx.AsyncClient(timeout=15) as client:
                     resp = await client.post(
                         url,
                         json={
@@ -219,9 +236,11 @@ class CozeConnector(BaseConnector):
                         },
                         headers=headers,
                     )
-                if resp.status_code in (401, 403):
-                    return False
-                return resp.status_code < 500
+                    if resp.status_code in (401, 403):
+                        return False
+                    return resp.status_code < 500
+        except ValueError:
+            raise  # 透传详细错误给 platforms.py
         except Exception:
             return False
 

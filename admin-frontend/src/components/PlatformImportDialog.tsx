@@ -215,10 +215,13 @@ export default function PlatformImportDialog({
 
   return (
     <>
-      {/* Overlay */}
-      <div className="pi-overlay" onClick={onClose}>
-        {/* Dialog */}
-        <div className="pi-dialog" onClick={(e) => e.stopPropagation()}>
+      {/* Overlay — 用 mousedown 检测点击，避免选中文字时鼠标移出触发关闭 */}
+      <div
+        className="pi-overlay"
+        onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        {/* Dialog — 阻止 mousedown 冒泡到遮罩 */}
+        <div className="pi-dialog" onMouseDown={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="pi-header">
             <div className="pi-steps">
@@ -296,15 +299,13 @@ export default function PlatformImportDialog({
                   <>
                     <div className="admin-form-group">
                       <label>API Token</label>
-                      <textarea className="admin-textarea" value={apiToken} onChange={(e) => setApiToken(e.target.value)} placeholder="Coze 平台创建的 API Token (cztei_xxx 格式)" rows={3} />
+                      <textarea className="admin-textarea" value={apiToken} onChange={(e) => setApiToken(e.target.value)} placeholder="cztei_xxx 或 pat_xxx 格式的个人访问令牌" rows={3} />
+                      <div className="pi-field-hint">在 Coze 控制台 → 个人设置 → API 令牌 创建</div>
                     </div>
                     <div className="admin-form-group">
                       <label>部署域名</label>
-                      <input className="admin-input" value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="例如: api.coze.cn 或 xxx.coze.site" />
-                    </div>
-                    <div className="admin-form-group">
-                      <label>Project ID</label>
-                      <input className="admin-input" type="number" value={projectId} onChange={(e) => setProjectId(e.target.value)} placeholder="Coze 项目 ID (可选)" />
+                      <input className="admin-input" value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="api.coze.cn" />
+                      <div className="pi-field-hint">只填域名，不要带路径。国内版填 api.coze.cn，私有部署填 xxx.coze.site</div>
                     </div>
                   </>
                 )}
