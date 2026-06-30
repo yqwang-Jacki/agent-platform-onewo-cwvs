@@ -30,7 +30,7 @@ export default function AgentsPage() {
   const platformLabel: Record<string, string> = {
     custom: "自定义",
     gc: "GC平台",
-    coze: "Coze",
+    coze: "扣子（Coze）",
   };
 
   return (

@@ -31,9 +31,9 @@ class CozeConnector(BaseConnector):
     """Coze 平台连接器"""
 
     platform_type = "coze"
-    platform_label = "Coze AI 平台"
-    platform_icon = "🤖"
-    help_text = "字节 Coze 平台 — 输入 API Token 和部署域名自动导入 Bot"
+    platform_label = "扣子（Coze）"
+    platform_icon = "coze"
+    help_text = "输入 API Token 和部署域名，自动导入 Bot"
 
     def _build_headers(self, cred: PlatformCredential) -> dict:
         return {

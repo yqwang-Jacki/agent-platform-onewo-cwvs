@@ -24,9 +24,9 @@ class GCConnector(BaseConnector):
     """GC 平台连接器"""
 
     platform_type = "gc"
-    platform_label = "GC 客服平台"
-    platform_icon = "💬"
-    help_text = "公司 GC 平台 — 输入 AppID 和 SecretKey 自动导入智能客服 Bot"
+    platform_label = "GC平台"
+    platform_icon = "gc"
+    help_text = "输入 AppID 和 SecretKey，自动导入智能客服 Bot"
 
     def _headers(self, token: str) -> dict:
         """GC 文档要求 token 直接放在 Authorization，不加 Bearer 前缀"""

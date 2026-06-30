@@ -825,3 +825,378 @@ a { color: inherit; text-decoration: none; }
   from { transform: translateY(-4px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* ── Platform Import Dialog (pi-) ── */
+.pi-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: fadeIn 0.15s ease;
+}
+
+.pi-dialog {
+  width: 540px;
+  max-width: 92vw;
+  max-height: 85vh;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.2s ease;
+}
+
+/* Header + Steps */
+.pi-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #eee;
+  position: relative;
+}
+
+.pi-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.pi-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pi-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e5e7eb;
+  color: #999;
+  transition: all 0.2s;
+}
+
+.pi-step.active .pi-step-num {
+  background: #111;
+  color: #fff;
+}
+
+.pi-step.done .pi-step-num {
+  background: transparent;
+  border: 1.5px solid #111;
+  color: #111;
+}
+
+.pi-step-label {
+  font-size: 12px;
+  color: #bbb;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.pi-step.active .pi-step-label {
+  color: #111;
+  font-weight: 500;
+}
+
+.pi-step.done .pi-step-label {
+  color: #666;
+}
+
+.pi-step-line {
+  width: 24px;
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0 10px;
+}
+
+.pi-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 2px;
+  transition: color 0.15s;
+  display: flex;
+}
+
+.pi-close:hover { color: #333; }
+
+/* Body */
+.pi-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Section common */
+.pi-section { }
+
+.pi-section-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #111;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pi-section-desc {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 22px;
+  line-height: 1.5;
+}
+
+/* Platform cards (Step 1) */
+.pi-platform-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pi-platform-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 18px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #fff;
+  text-align: left;
+  transition: all 0.15s;
+  width: 100%;
+  font-family: inherit;
+}
+
+.pi-platform-card:hover {
+  border-color: #ccc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.pi-platform-card:active {
+  transform: translateY(0);
+}
+
+.pi-platform-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.pi-platform-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pi-platform-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 3px;
+}
+
+.pi-platform-desc {
+  font-size: 12px;
+  color: #999;
+  line-height: 1.4;
+}
+
+.pi-platform-arrow {
+  flex-shrink: 0;
+  color: #ccc;
+  transition: color 0.15s;
+}
+
+.pi-platform-card:hover .pi-platform-arrow {
+  color: #999;
+}
+
+/* Back button */
+.pi-back-btn {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 14px;
+  font-family: inherit;
+  transition: color 0.12s;
+}
+
+.pi-back-btn:hover {
+  color: #111;
+  text-decoration: underline;
+}
+
+/* Title icon in credentials step */
+.pi-title-icon {
+  display: flex;
+  align-items: center;
+}
+
+/* Error in dialog */
+.pi-error {
+  margin-bottom: 12px;
+  padding-top: 4px;
+}
+
+/* Action button */
+.pi-action-btn {
+  margin-top: 4px;
+  width: 100%;
+  justify-content: center;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+/* Bot list (Step 3) */
+.pi-bot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pi-bot-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #eee;
+  border-radius: 9px;
+  cursor: pointer;
+  background: #fff;
+  text-align: left;
+  transition: all 0.15s;
+  width: 100%;
+  font-family: inherit;
+}
+
+.pi-bot-card:hover {
+  border-color: #ddd;
+  background: #fafafa;
+}
+
+.pi-bot-card.selected {
+  border-color: #111;
+  background: #f9f9f9;
+}
+
+.pi-bot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pi-bot-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 2px;
+}
+
+.pi-bot-desc {
+  font-size: 12px;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pi-bot-check {
+  color: #111;
+  flex-shrink: 0;
+}
+
+/* Warning box */
+.pi-warning {
+  padding: 12px 14px;
+  background: #fefce8;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #92400e;
+  margin-bottom: 16px;
+}
+
+/* Manual input box */
+.pi-manual-box {
+  border: 1px solid #eee;
+  border-radius: 9px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.pi-manual-label {
+  font-size: 12px;
+  color: #aaa;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+/* Summary (Step 4) */
+.pi-summary {
+  padding: 14px 16px;
+  background: #fafafa;
+  border-radius: 9px;
+  font-size: 12px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.pi-summary-title {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.pi-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  color: #555;
+}
+
+.pi-summary-row span:last-child {
+  color: #111;
+  font-weight: 500;
+  text-align: right;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pi-summary-k {
+  color: #999;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .pi-dialog { width: 95vw; border-radius: 10px; }
+  .pi-header { padding: 16px 16px 12px; }
+  .pi-body { padding: 16px; }
+  .pi-step-label { font-size: 11px; }
+  .pi-step-line { width: 14px; margin: 0 6px; }
+  .pi-platform-card { padding: 14px; gap: 12px; }
+}
