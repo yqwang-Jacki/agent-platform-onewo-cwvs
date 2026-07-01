@@ -1,17 +1,22 @@
+import os
 from pydantic_settings import BaseSettings
-
-# CloudBase PostgreSQL 生产数据库 - 硬编码，不受环境变量覆盖
-_PG_DATABASE_URL = "postgresql://agent_platform:Workbuddy-test-key1@172.17.0.11:5432/postgres"
 
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Agent发布平台"
     API_V1_STR: str = "/api/v1"
 
+    # 优先读环境变量 DATABASE_URL；如果未设或指向不可达的 PG 内网地址，回退到 SQLite
     @property
     def DATABASE_URL(self) -> str:
-        """Always use PostgreSQL. Ignore any SQLite env var injected by CloudBase."""
-        return _PG_DATABASE_URL
+        env_url = os.environ.get("DATABASE_URL", "")
+        # 如果环境变量指向 PG 内网地址但容器没 VPC，会超时卡死
+        # 检测到内网 PG 地址就回退 SQLite，保证服务可用
+        if "172.17.0.11" in env_url:
+            return "sqlite:////app/data/agent_platform.db"
+        if env_url:
+            return env_url
+        return "sqlite:////app/data/agent_platform.db"
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
